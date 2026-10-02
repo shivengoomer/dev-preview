@@ -1,0 +1,370 @@
+# DevPreview — Agent Instructions
+
+## What is DevPreview?
+
+DevPreview is an open-source, CLI-first developer tool that turns a local development server into a temporary shareable HTTPS URL.
+
+The primary workflow is:
+
+```bash
+npx devpreview
+```
+
+```text
+Detect local app
+      ↓
+Create temporary tunnel
+      ↓
+Print public HTTPS URL
+      ↓
+Developer shares it
+```
+
+The product should feel like:
+
+> **"localhost, but shareable."**
+
+---
+
+## Product Principles
+
+1. **CLI first**
+2. **Zero configuration**
+3. **No account required for MVP**
+4. **No paid/custom domain required**
+5. **Open source**
+6. **Fast startup**
+7. **Minimal dependencies**
+8. **Do not over-engineer**
+9. **Good terminal UX**
+10. **Security by default**
+
+---
+
+## MVP
+
+The MVP must support:
+
+```bash
+npx devpreview
+npx devpreview --port 3000
+npx devpreview --help
+npx devpreview --version
+```
+
+Core functionality:
+
+* Detect local development server.
+* Accept explicit port.
+* Start a tunnel automatically.
+* Generate/use a temporary public HTTPS URL.
+* Print the URL clearly.
+* Display tunnel status.
+* Gracefully stop the tunnel with `Ctrl+C`.
+* Clean up child processes.
+* Handle tunnel failures clearly.
+
+---
+
+## Current Tunnel Strategy
+
+Use **Cloudflare Quick Tunnel** as the initial tunnel implementation.
+
+Conceptually:
+
+```text
+DevPreview CLI
+      │
+      ▼
+cloudflared
+      │
+      ▼
+localhost:<port>
+```
+
+The CLI should manage `cloudflared` automatically.
+
+Do not require users to manually configure:
+
+* DNS
+* domains
+* certificates
+* Cloudflare accounts
+* API keys
+
+---
+
+## Important Architecture Rule
+
+Cloudflare must NOT be deeply coupled to the rest of the application.
+
+Create a tunnel abstraction:
+
+```ts
+interface TunnelProvider {
+  start(port: number): Promise<TunnelSession>;
+  stop(): Promise<void>;
+}
+```
+
+Initial implementation:
+
+```text
+CloudflareTunnelProvider
+```
+
+Future providers can include:
+
+```text
+ZrokTunnelProvider
+BoreTunnelProvider
+FrpTunnelProvider
+```
+
+---
+
+## Do Not Build Yet
+
+Do NOT implement these unless explicitly requested:
+
+* Custom domains
+* User accounts
+* Billing
+* Team management
+* Cloud-hosted databases
+* Full deployment infrastructure
+* Kubernetes
+* Complex analytics
+* AI features
+* GitHub integration
+* PR previews
+* Persistent preview environments
+* Cloud IDE
+* Full observability platform
+
+The MVP is a tunnel + excellent CLI experience.
+
+---
+
+## Development Philosophy
+
+Prefer the simplest implementation that works.
+
+Before adding a dependency:
+
+1. Check whether Node.js provides the functionality.
+2. Check whether an existing dependency already solves it.
+3. Only then add a new dependency.
+
+Avoid abstractions that do not have an immediate use.
+
+Do not create large frameworks around simple functionality.
+
+---
+
+## Code Quality
+
+Prefer:
+
+* TypeScript
+* Small modules
+* Explicit types
+* Async/await
+* Clear error handling
+* Platform-aware process handling
+* Testable functions
+* Minimal side effects
+
+Avoid:
+
+* `any`
+* unnecessary classes
+* global mutable state
+* deeply nested callbacks
+* giant files
+* premature abstractions
+
+---
+
+## CLI UX
+
+The CLI is the product.
+
+Output should be:
+
+```text
+DevPreview
+
+✓ Local server found
+✓ Starting tunnel
+✓ Preview ready
+
+  https://example.trycloudflare.com
+
+  Local:  http://localhost:3000
+  Status: Connected
+
+Press Ctrl+C to stop
+```
+
+Errors should be actionable.
+
+Bad:
+
+```text
+Error: spawn ENOENT
+```
+
+Good:
+
+```text
+✗ Could not start cloudflared
+
+cloudflared was not found.
+
+Install cloudflared and run DevPreview again.
+```
+
+Never dump raw stack traces for normal user-facing failures.
+
+---
+
+## Process Management
+
+The CLI will launch an external tunnel process.
+
+It must:
+
+* capture stdout/stderr
+* detect successful tunnel creation
+* extract the public URL
+* forward relevant errors
+* terminate the child process on exit
+* handle SIGINT
+* handle SIGTERM
+* avoid orphaned processes
+
+Test process cleanup explicitly.
+
+---
+
+## Cross Platform
+
+The CLI should eventually support:
+
+* macOS
+* Linux
+* Windows
+
+Do not assume:
+
+```text
+/bin/bash
+```
+
+or Unix-only commands.
+
+Use Node.js APIs for process management and filesystem operations whenever possible.
+
+---
+
+## Testing
+
+Every core behavior should have tests.
+
+Minimum coverage:
+
+```text
+Port parsing
+Port validation
+Port detection
+CLI arguments
+Tunnel URL extraction
+Tunnel startup failure
+Tunnel shutdown
+SIGINT handling
+Invalid port
+Port unavailable
+```
+
+Tests must not depend on a real public tunnel unless explicitly marked as integration tests.
+
+Mock external tunnel processes in unit tests.
+
+---
+
+## Git Rules
+
+Keep commits small and focused.
+
+Prefer:
+
+```text
+feat: add tunnel provider interface
+feat: add cloudflare tunnel provider
+feat: add automatic port detection
+fix: cleanup tunnel on SIGINT
+test: add tunnel URL parsing tests
+```
+
+Avoid:
+
+```text
+update stuff
+changes
+final
+fixed
+```
+
+Never commit:
+
+```text
+.env
+API keys
+tokens
+credentials
+local configuration
+```
+
+---
+
+## Agent Workflow
+
+Before changing code:
+
+1. Inspect the existing project.
+2. Understand the current architecture.
+3. Find the smallest relevant change.
+4. Implement it.
+5. Run tests.
+6. Run typecheck/lint.
+7. Verify CLI behavior.
+8. Report exactly what changed.
+
+Do not rewrite unrelated code.
+
+Do not refactor unrelated files.
+
+Do not introduce new architecture unless necessary.
+
+---
+
+## Definition of Done
+
+A feature is complete only when:
+
+* It works locally.
+* Relevant tests pass.
+* TypeScript passes.
+* Lint passes.
+* Errors are handled.
+* Processes are cleaned up.
+* No secrets are exposed.
+* CLI output is understandable.
+* Documentation is updated when user-facing behavior changes.
+
+---
+
+## Golden Rule
+
+**Do not build a complicated platform when a developer only asked for a shareable localhost URL.**
