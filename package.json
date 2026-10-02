@@ -1,0 +1,44 @@
+{
+  "name": "devpreview",
+  "version": "0.1.0",
+  "description": "Share your localhost instantly via temporary public HTTPS URLs",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "devpreview": "./bin/devpreview.js"
+  },
+  "files": [
+    "dist",
+    "bin"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "test": "node --import tsx --test 'test/**/*.test.ts'",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src/ test/",
+    "dev": "tsx src/cli/index.ts"
+  },
+  "keywords": [
+    "tunnel",
+    "cloudflare",
+    "localhost",
+    "preview",
+    "dev-server",
+    "cli"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.0",
+    "@types/node": "^26.6.4",
+    "eslint": "^9.39.0",
+    "tsup": "^8.5.1",
+    "tsx": "^4.21.0",
+    "typescript": "5.8.3",
+    "typescript-eslint": "^8.56.0"
+  }
+}
